@@ -17,48 +17,97 @@ const app = express();
 app.use(express.json());
 
 // --- MongoDB ---
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-mongoose.connection.on("connected", () => console.log("✅ MongoDB connected"));
-mongoose.connection.on("error", (err) => console.error("MongoDB error:", err));
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB error:", err));
 
 // --- HTTP + Socket.IO ---
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
+
+// --- Health check route (for Postman sanity check) ---
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "Carpool backend running 🚀" });
+});
+
+// --- User routes ---
+// Create user
+app.post("/api/users", async (req, res) => {
+  try {
+    const { name, email, role } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: "Name and email are required" });
+    }
+
+    const user = await User.create({ name, email, role });
+    res.status(201).json(user);
+  } catch (err) {
+    console.error("❌ Create user error:", err);
+    res.status(500).json({ error: "create user failed" });
+  }
+});
+
+// Get all users (for testing)
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    console.error("❌ Get users error:", err);
+    res.status(500).json({ error: "get users failed" });
+  }
+});
 
 // --- Express routes ---
 // Create trip
 app.post("/api/trips", async (req, res) => {
   try {
     const { driverId, origin, destination } = req.body;
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&key=${apiKey}`;
+    if (!origin?.lat || !origin?.lng || !destination?.lat || !destination?.lng) {
+      return res.status(400).json({ error: "Invalid origin/destination" });
+    }
+
+    const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=polyline`;
+    console.log("👉 OSRM URL:", url);
+
     const r = await fetch(url);
     const data = await r.json();
-    if (!data.routes?.length) return res.status(400).json({ error: "No route" });
+    console.log("👉 OSRM Response:", data);
 
-    const encodedPolyline = data.routes[0].overview_polyline.points;
+    if (!data.routes?.length) {
+      return res.status(400).json({ error: "No route found", details: data });
+    }
+
+    const encodedPolyline = data.routes[0].geometry;
 
     const trip = await Trip.create({
       driverId,
       origin,
       destination,
       encodedPolyline,
+      status: "open",
     });
 
-    res.json(trip);
+    res.status(201).json(trip);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "create trip failed" });
+    console.error("❌ Create trip error details:", err);
+    res.status(500).json({ error: "create trip failed", details: err.message });
   }
 });
+
 
 // Rider search + booking
 app.post("/api/search", async (req, res) => {
   try {
     const { riderId, originR, destinationR, thresholdMeters = 400 } = req.body;
+    if (!originR?.lat || !originR?.lng) {
+      return res.status(400).json({ error: "Invalid rider origin" });
+    }
+
     const trips = await Trip.find({ status: "open" });
 
     for (const trip of trips) {
@@ -66,6 +115,7 @@ app.post("/api/search", async (req, res) => {
         trip.encodedPolyline,
         [originR.lat, originR.lng]
       );
+
       if (distanceMeters <= thresholdMeters) {
         const booking = await Booking.create({
           tripId: trip._id,
@@ -80,9 +130,9 @@ app.post("/api/search", async (req, res) => {
       }
     }
 
-    res.json({ match: false });
+    res.json({ match: false, message: "No rides found nearby" });
   } catch (err) {
-    console.error(err);
+    console.error("❌ Rider search error:", err);
     res.status(500).json({ error: "search failed" });
   }
 });
@@ -91,13 +141,28 @@ app.post("/api/search", async (req, res) => {
 app.post("/api/walking-route", async (req, res) => {
   try {
     const { origin, destination } = req.body;
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&mode=walking&key=${apiKey}`;
+    if (!origin?.lat || !origin?.lng || !destination?.lat || !destination?.lng) {
+      return res.status(400).json({ error: "Invalid walking route request" });
+    }
+
+    // OSRM walking route
+    const url = `https://router.project-osrm.org/route/v1/walking/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=polyline`;
+
     const r = await fetch(url);
     const data = await r.json();
-    res.json(data);
+
+    if (!data.routes?.length) {
+      return res.status(400).json({ error: "No walking route found" });
+    }
+
+    res.json({
+      status: "ok",
+      walkingPolyline: data.routes[0].geometry,
+      distance: data.routes[0].distance,
+      duration: data.routes[0].duration,
+    });
   } catch (err) {
-    console.error(err);
+    console.error("❌ Walking route error:", err);
     res.status(500).json({ error: "walking route failed" });
   }
 });
@@ -125,6 +190,7 @@ io.on("connection", (socket) => {
 
   socket.on("leave-trip", ({ tripId }) => {
     socket.leave(`trip_${tripId}`);
+    console.log(`User left trip_${tripId}`);
   });
 
   socket.on("disconnect", () => {
