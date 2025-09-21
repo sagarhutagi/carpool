@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Register</title>
+  </head>
+  <body>
+    <h1>Register</h1>
+    <% if (error) { %>
+    <p style="color: red"><%= error %></p>
+    <% } %>
+    <form action="/register" method="POST">
+      <input name="username" placeholder="PRN or SRN" required /><br />
+      <input
+        name="password"
+        type="password"
+        placeholder="Password"
+        required
+      /><br />
+      <button type="submit">Register</button>
+    </form>
+    <a href="/login">Already have an account? Login</a>
+  </body>
+</html>
