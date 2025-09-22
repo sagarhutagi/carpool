@@ -2,60 +2,28 @@ import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, TileLayer, Popup } from 'react-leaflet';
 import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
-// import DriverInfoCard from '../components/DriverInfoCard.jsx';
 import DriverInfoCard from '../components/driverInfoCard';
 
+// Using a placeholder for the socket connection to avoid errors.
+// In a real application, you would ensure the server is running and accessible.
+// try {
+//   const socket = io('http://localhost:3000');
+// }
+// catch {
+//   console.log("Error connecting to server!")
+// }
 
-try {
-  const socket = io('http://localhost:3000');
-}
-catch {
-  console.log("Error connecting to server!")
-}
-// const carLender = [12.924865, 77.550866];
-// const carPooler = [12.932375989090675, 77.55149747184085];
-// const destination = [12.9350833, 77.5308973];
+const carPooler = [12.932375989090675, 77.55149747184085];
 
 function App() {
   const pesu_coord = [12.935434549896387, 77.53599357316021];
-  const someDrivers = [{
-    "name": "Alex",
-    "rating": "4.9",
-    "distance": "0.5 mi",
-    "eta": "3 min",
-  },
-  {
-    "name": "Ben",
-    "rating": "4.7",
-    "distance": "1.2 mi",
-    "eta": "7 min"
-  },
-  {
-    "name": "Chris",
-    "rating": "4.8",
-    "distance": "0.8 mi",
-    "eta": "5 min"
-  },
-  {
-    "name": "David",
-    "rating": "5.0",
-    "distance": "2.1 mi",
-    "eta": "10 min"
-  },
-  {
-    "name": "Ethan",
-    "rating": "4.6",
-    "distance": "0.6 mi",
-    "eta": "4 min"
-  }];
-
   const [currLocation, setCurrLocation] = useState({ lat: '', lng: '', place_name: '' });
   const [destination, setDestination] = useState({ lat: '', lng: '', place_name: '' });
   const [error, setError] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
   const debounceTimer = useRef(null);
   const [drivers, setDrivers] = useState([]);
-
+  const [isFindingDriver, setIsFindingDriver] = useState(false);
 
   const handleDestChange = (e) => {
     setDestination({ lat: destination.lat, lng: destination.lng, place_name: e.target.value });
@@ -65,14 +33,23 @@ function App() {
     setDestination({ lat: pesu_coord[0], lng: pesu_coord[1], place_name: "PES University" });
   }
 
-  const findDriver = () => {
+  const findDriver = async() => {
+    // Start the loading state
+    setIsFindingDriver(true);
 
-    //  Send API request to backend with currLocation and destination
-    //  Display top 5 drivers around rider, along with their ratings and everything
-
-    //Appending raw data now:
-    setDrivers(someDrivers);
-
+    try {
+      const url = `http://localhost:3000/finddrivers?tocollege=true&lat=${currLocation.lat}&lng=${currLocation.lng}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      console.log(data);
+      setDrivers(data);
+    } catch (err) {
+      console.error("Failed to fetch drivers:", err);
+      setDrivers([]);
+    } finally {
+      // End the loading state, regardless of success or failure
+      setIsFindingDriver(false);
+    }
   }
 
   useEffect(() => {
@@ -125,7 +102,7 @@ function App() {
       } finally {
         setPageLoading(false)
       }
-    }, 5000); // 3-second debounce
+    }, 5000); // 5-second debounce
   }, [currLocation.lat, currLocation.lng]);
 
   let inputStyle = {
@@ -226,7 +203,6 @@ function App() {
 
   return (
     <>
-
       <div
         style={{
           minHeight: '100vh',
@@ -244,7 +220,9 @@ function App() {
         <div>
           Destination: <input type="text" value={destination.place_name} onChange={handleDestChange} style={inputStyle} />
           <button onClick={pesuBtn}>PESU</button>
-          <button onClick={findDriver}>Find Driver!</button>
+          <button onClick={findDriver} disabled={isFindingDriver}>
+            {isFindingDriver ? 'Finding Drivers...' : 'Find Driver!'}
+          </button>
         </div>
         <br />
 
@@ -252,36 +230,38 @@ function App() {
           backgroundColor: "red",
           display: "flex"
         }}>
-
-
-
           <MapContainer center={[currLocation.lat, currLocation.lng]} zoom={14} style={{ height: '500px', width: '500px' }}>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <Marker position={[currLocation.lat, currLocation.lng]}> <Popup>Your Location.</Popup> </Marker>
-            <Marker position={[destination.lat, destination.lng]}> <Popup>Destination</Popup></Marker>
+            {destination.lat && <Marker position={[destination.lat, destination.lng]}> <Popup>Destination</Popup></Marker>}
           </MapContainer>
-
         </div>
         <br />
 
-
-
-
-        <div style={{
-          marginBottom: "100px"
-        }}>
-
-          {drivers.map((driver, index) => (
-            <DriverInfoCard
-              name={driver.name}
-              rating={driver.rating}
-              distance={driver.distance}
-              eta={driver.eta}
-            />
-          ))}
+        <div style={{ marginBottom: "100px" }}>
+          {isFindingDriver ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <Loader2 className="animate-spin" style={{ marginRight: '10px' }} />
+              <p>Searching for drivers...</p>
+            </div>
+          ) : (
+            drivers.length > 0 ? (
+              drivers.map((driver) => (
+                <DriverInfoCard
+                  key={driver._id}
+                  name={driver.name}
+                  rating={driver.rating}
+                  distance={driver.distance}
+                  eta={driver.eta}
+                />
+              ))
+            ) : (
+              <p>No drivers found matching your criteria.</p>
+            )
+          )}
         </div>
       </div>
     </>
