@@ -1,0 +1,103 @@
+.App {
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-container {
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.auth-container h2 {
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-form input {
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.auth-form button {
+  padding: 0.75rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.auth-form button:hover {
+  background-color: #0056b3;
+}
+
+.toggle-link {
+  margin-top: 1rem;
+  color: #007bff;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+.message {
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.home-container {
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.home-container h1 {
+  color: #333;
+}
+
+.home-container button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #dc3545;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1.5rem;
+}
+
+.auth-form button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
