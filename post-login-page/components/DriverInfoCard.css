@@ -1,0 +1,79 @@
+/* Card Container */
+.driver-card {
+  display: flex;
+  align-items: center;
+  background: #1f2937; /* dark gray */
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  max-width: 500px;
+  gap: 16px;
+  font-family: sans-serif;
+  color: #e5e7eb; /* light gray text */
+}
+
+/* Avatar */
+.driver-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #374151; /* darker gray */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #f9fafb; /* near-white */
+}
+
+/* Driver Info */
+.driver-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.driver-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.driver-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.driver-rating {
+  background-color: #facc15; /* yellow for rating */
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #111827; /* dark text on yellow */
+}
+
+.driver-meta {
+  display: flex;
+  gap: 16px;
+  color: #d1d5db; /* lighter gray text */
+  font-size: 0.9rem;
+}
+
+/* Book Button */
+.driver-book-btn {
+  background-color: #3b82f6; /* blue */
+  color: #f9fafb;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.driver-book-btn:hover {
+  background-color: #2563eb; /* darker blue */
+}
