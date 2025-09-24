@@ -9,6 +9,8 @@ const carLender = [12.924865, 77.550866];
 const carPooler = [12.932375989090675, 77.55149747184085];
 const college = [12.9350833, 77.5308973];
 
+const available_duration = 15*60;
+
 // {
 //     "_id":"",
 //     "name":"",
@@ -36,7 +38,7 @@ const college = [12.9350833, 77.5308973];
 //   // [12.925455107380667, 77.550040876773]
 // ];
 // const carPooler = [12.932375989090675, 77.55149747184085];
-const moreDrivers = [
+const someDrivers = [
     {
         "_id": "82c31a62-e7cc-4ab2-a836-c2f01d42f310",
         "name": "Prakash",
@@ -151,53 +153,51 @@ const moreDrivers = [
     }
 ];
 
-const someDrivers = [
-        {
-        "_id": "342b0ae4-9f85-414a-9a9a-14771c818dbb",
-        "name": "Anita",
-        "rating": 4.2,
-        "lat": 12.91386072158737,
-        "lng": 77.53122652353656,
-        "tocollege": "true"
-    },
-    {
-        "_id": "f54785a6-81a8-4840-ae21-0365a380be60",
-        "name": "Anita",
-        "rating": 4.0,
-        "lat": 12.911435297147186,
-        "lng": 77.5568383203813,
-        "tocollege": "true"
-    },
-    {
-        "_id": "3addde70-c59f-4d01-a2cd-7e726ddd1e9d",
-        "name": "Anita",
-        "rating": 4.7,
-        "lat": 12.92474526242629,
-        "lng": 77.55107263156964,
-        "tocollege": "true"
-    },
-    {
-        "_id": "babb000c-65a9-4c62-b897-8e51abab995b",
-        "name": "Kavya",
-        "rating": 4.1,
-        "lat": 12.925455107380667,
-        "lng": 77.550040876773,
-        "tocollege": "true"
-    }
-];
+// const someDrivers = [
+//         {
+//         "_id": "342b0ae4-9f85-414a-9a9a-14771c818dbb",
+//         "name": "Ken",
+//         "rating": 4.2,
+//         "lat": 12.91386072158737,
+//         "lng": 77.53122652353656,
+//         "tocollege": "true"
+//     },
+//     {
+//         "_id": "f54785a6-81a8-4840-ae21-0365a380be60",
+//         "name": "Jack",
+//         "rating": 4.0,
+//         "lat": 12.911435297147186,
+//         "lng": 77.5568383203813,
+//         "tocollege": "true"
+//     },
+//     {
+//         "_id": "3addde70-c59f-4d01-a2cd-7e726ddd1e9d",
+//         "name": "Ron",
+//         "rating": 4.7,
+//         "lat": 12.92474526242629,
+//         "lng": 77.55107263156964,
+//         "tocollege": "true"
+//     },
+//     {
+//         "_id": "babb000c-65a9-4c62-b897-8e51abab995b",
+//         "name": "Tony",
+//         "rating": 4.1,
+//         "lat": 12.925455107380667,
+//         "lng": 77.550040876773,
+//         "tocollege": "true"
+//     }
+// ];
 
 const osrmRouteFetch = async (from, to) => {
-    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${from.reverse().join(',')};${to.reverse().join(',')}?overview=full&geometries=geojson`;
-
-    // https://router.project-osrm.org/route/v1/driving/77.550866,12.924865;77.54393477639849,12.930553122951068?overview=full&geometries=geojson
+    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`;
 
     const response = await fetch(osrmUrl);
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const data = await response.json();
-    return data;
-}
+    return await response.json();
+};
+
 
 app.get('/', (req, res) => {
     res.send("Welcome to server!");
@@ -211,31 +211,44 @@ app.get('/data', (req, res) => {
 const possibleDrivers = [];
 //  URL looks like : http:localhost:3000/finddrivers?lat=1234&lng=1234&dlat=1234&dlng=1234&tocollege=true
 app.get('/finddrivers', async (req, res) => {
+    var data={};
+    var data2={};
     console.log("Here!");
     //  Fetch data from DB (instead of someDrivers variable)
 
 
     for (let i = 0; i < someDrivers.length; i++) {
         // check if both's destination is same:
-        console.log(`Checking driver ${i+1}/${someDrivers.length}`)
+        console.log("");
         currentDriver = someDrivers[i];
+        console.log(`Checking driver ${i+1}/${someDrivers.length} ${currentDriver.name}`);
         if (currentDriver.tocollege == req.query.tocollege) {
-            var data = await osrmRouteFetch(carLender, carPooler);
+            data = await osrmRouteFetch([currentDriver.lat,currentDriver.lng], [req.query.lat,req.query.lng]);
+            data2 = await osrmRouteFetch([req.query.lat,req.query.lng],college);
+
+            var total_time = data.routes[0].duration+data2.routes[0].duration;
+
+            console.log(`Total time with ${currentDriver.name} is ${total_time}`)
             
             currentDriver.distance = data.routes[0].distance;
             currentDriver.eta = data.routes[0].duration;
 
-            if(currentDriver.eta !=0){
-                possibleDrivers.push(currentDriver);
-            }
+            // if(currentDriver.eta !==0 && total_time<available_duration){
+            //     possibleDrivers.push(currentDriver);
+            // }
+
+            possibleDrivers.push(currentDriver);
+
         }
     }
     console.log(possibleDrivers);
 
-    //  Sorting the array
+    //  Sorting the array according to ETA
+    possibleDrivers.sort((a, b) => a.eta - b.eta);
 
 
-    res.send(possibleDrivers);
+
+    res.send(possibleDrivers.slice(0,5));
     // const data = await osrmRouteFetch([someDrivers[0].lat,someDrivers[0].lng],[req.query.lat,req.query.lng]);
 });
 

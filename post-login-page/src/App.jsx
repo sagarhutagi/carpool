@@ -52,6 +52,7 @@ function App() {
     }
   }
 
+  // Gets the current location corrdinates
   useEffect(() => {
     const getLocation = () => {
       if (!navigator.geolocation) {
@@ -80,6 +81,7 @@ function App() {
     getLocation();
   }, []);
 
+  // Reverse geocoding, set page loading false after data fetched.
   useEffect(() => {
     if (!currLocation.lat || !currLocation.lng) return;
 
@@ -254,8 +256,8 @@ function App() {
                   key={driver._id}
                   name={driver.name}
                   rating={driver.rating}
-                  distance={driver.distance}
-                  eta={driver.eta}
+                  distance={(driver.distance/1000).toFixed(1)}
+                  eta={(driver.eta/60).toFixed(1)}
                 />
               ))
             ) : (
