@@ -252,6 +252,12 @@ app.get('/finddrivers', async (req, res) => {
     // const data = await osrmRouteFetch([someDrivers[0].lat,someDrivers[0].lng],[req.query.lat,req.query.lng]);
 });
 
+app.get('/driver/available',async (req,res)=>{
+
+    //
+
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     console.log('Use an endpoint like /data?name=Alex&rating=4.9 to test.');
