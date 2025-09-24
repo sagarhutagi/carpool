@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "lucide-react": "^0.544.0",
+    "react-leaflet": "^5.0.0-rc.2"
+  }
+}
