@@ -1,5 +1,9 @@
 const express = require('express');
 const cors = require('cors');
+const io = require('socket.io')(5000,{
+    cors:['http://localhost']
+});
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,6 +12,14 @@ app.use(cors());
 const carLender = [12.924865, 77.550866];
 const carPooler = [12.932375989090675, 77.55149747184085];
 const college = [12.9350833, 77.5308973];
+
+let currentDriver = {
+        "lat":"",
+        "lng":"",
+        "dlat":"",
+        "dlng":"",
+        "tocollege":""
+}
 
 const available_duration = 15*60;
 
@@ -188,6 +200,18 @@ const someDrivers = [
 //     }
 // ];
 
+
+
+io.on('connection',socket=>{
+    console.log(`Received connection from ${socket.id}`);
+
+    socket.on('update_location',(data)=>{
+        currentDriver.lat = data.lat;
+        currentDriver.lng = data.lng;
+    });
+
+});
+
 const osrmRouteFetch = async (from, to) => {
     const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`;
 
@@ -210,7 +234,7 @@ app.get('/data', (req, res) => {
 
 const possibleDrivers = [];
 //  URL looks like : http:localhost:3000/finddrivers?lat=1234&lng=1234&dlat=1234&dlng=1234&tocollege=true
-app.get('/finddrivers', async (req, res) => {
+app.get('/user/finddrivers', async (req, res) => {
     var data={};
     var data2={};
     console.log("Here!");
@@ -254,7 +278,20 @@ app.get('/finddrivers', async (req, res) => {
 
 app.get('/driver/available',async (req,res)=>{
 
-    //
+    console.log("New driver available!");
+
+    currentDriver = {
+        "lat":req.query.lat,
+        "lng":req.query.lng,
+        "dlat":req.query.dlat,
+        "dlng":req.query.dlng,
+        "tocollege":req.query.tocollege
+    }
+
+    console.log(`Details: ${currentDriver}`);
+    res.json(currentDriver);
+
+
 
 });
 
