@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client' // <-- Correct import
 const socket = io('http://localhost:5000');
 
@@ -6,10 +7,12 @@ const socket = io('http://localhost:5000');
 
 
 function DriverPage() {
+  const navigate = useNavigate();
   const pesu_coord = [12.935434549896387, 77.53599357316021];
   const [isAvailable, setIsAvailable] = useState(false);
   const [currentLocation, setCurrentLocation] = useState({ lat: '', lng: '', place_name: '' });
   const [destination, setDestination] = useState({ lat: '', lng: '', place_name: '' });
+  const myID = "mynameisron"; //Unique ID for the driver fetched from login/auth system
 
   useEffect(() => {
     // Get current location when component mounts
@@ -26,23 +29,44 @@ function DriverPage() {
     }
   }, []);
 
-  const toggleAvailability = async() => {
-    setIsAvailable(!isAvailable);
+  const toggleAvailability = async () => {
+    const newAvailabilityStatus = !isAvailable;
+    setIsAvailable(newAvailabilityStatus);
 
-    // Get current location
-    if (!navigator.geolocation) {
+    if (newAvailabilityStatus) {
+      // Going online - redirect to post-available page
+      // Get current location
+      if (!navigator.geolocation) {
         console.log('Geolocation is not supported by your browser');
         return;
       }
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const { latitude, longitude } = position.coords;
           console.log([latitude, longitude]);
-          setCurrentLocation({ lat: latitude, lng: longitude, place_name: '' });
+          const updatedLocation = { lat: latitude, lng: longitude, place_name: '' };
+          setCurrentLocation(updatedLocation);
+
+          // Send availability status to server
+          const url = `http://localhost:3000/driver/available?tocollege=true&lat=${updatedLocation.lat}&lng=${updatedLocation.lng}&dlat=${destination.lat}&dlng=${destination.lng}`;
+
+          navigate(`/driver-online/${myID}`, {
+            state: {
+              driverData: {
+                id: myID,
+                location: `${updatedLocation.lat}, ${updatedLocation.lng}`,
+                destination: destination.place_name || 'Not set',
+                destinationLat: destination.lat || '0',
+                destinationLng: destination.lng || '0',
+                tocollege: true,
+                roomId: myID
+              }
+            }
+          });
         },
         (err) => {
           console.log(`Error: ${err.message}`);
-          setError(err.message);
+          setIsAvailable(false); // Revert on error
         },
         {
           enableHighAccuracy: true,
@@ -50,18 +74,11 @@ function DriverPage() {
           maximumAge: 0,
         }
       );
-
-    // TODO: Send availability status to server
-
-      const url = `http://localhost:3000/driver/available?tocollege=true&lat=${currentLocation.lat}&lng=${currentLocation.lng}&dlat=${destination.lat}&dlng=${destination.lng}`;
-
-      const data = await (await fetch(url)).json();
-
-    //   socket.emit('msg',"Test message");
-
-      console.log(data);
-      
-
+    } else {
+      // Going offline - just update status
+      console.log(`Driver ${myID} going offline`);
+      // socket.emit('driver_offline', myID);
+    }
   };
 
   const handleDestChange = (e) => {
@@ -85,7 +102,7 @@ function DriverPage() {
       <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#333' }}>
         Driver Dashboard
       </h1>
-      
+
       <div style={{
         backgroundColor: '#f8f9fa',
         padding: '2rem',
@@ -153,11 +170,11 @@ function DriverPage() {
             </button>
           </div>
           {destination.place_name && (
-            <p style={{ 
-              fontSize: '0.9rem', 
-              color: '#666', 
+            <p style={{
+              fontSize: '0.9rem',
+              color: '#666',
               marginTop: '0.5rem',
-              fontStyle: 'italic' 
+              fontStyle: 'italic'
             }}>
               Selected: {destination.place_name}
             </p>

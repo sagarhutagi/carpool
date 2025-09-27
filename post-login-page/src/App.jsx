@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import PassengerPage from './pages/PassengerPage';
 import DriverPage from './pages/DriverPage';
+import PostBookingPage from './pages/PostBookingPage';
+import PostAvailablePage from './pages/PostAvailablePage';
 import './App.css';
 
 
@@ -68,6 +70,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/passenger" element={<PassengerPage />} />
           <Route path="/driver" element={<DriverPage />} />
+          <Route path="/booking-confirmed/:driverId" element={<PostBookingPage />} />
+          <Route path="/driver-online/:driverId" element={<PostAvailablePage />} />
         </Routes>
       </div>
     </Router>

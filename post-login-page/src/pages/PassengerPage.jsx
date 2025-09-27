@@ -258,6 +258,7 @@ function PassengerPage() {
                   rating={driver.rating}
                   distance={(driver.distance/1000).toFixed(1)}
                   eta={(driver.eta/60).toFixed(1)}
+                  driverId={driver._id}
                 />
               ))
             ) : (

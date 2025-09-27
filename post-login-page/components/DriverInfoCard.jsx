@@ -1,7 +1,25 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "./DriverInfoCard.css"; // we'll create this for styling
 
-function DriverInfoCard({ name, rating, distance, eta }) {
+function DriverInfoCard({ name, rating, distance, eta, driverId }) {
+  const navigate = useNavigate();
+
+  const handleBook = () => {
+    // Navigate to post-booking page with driver ID and pass driver data
+    navigate(`/booking-confirmed/${driverId}`, {
+      state: {
+        driverData: {
+          id: driverId,
+          name: name,
+          rating: rating,
+          distance: distance,
+          eta: eta
+        }
+      }
+    });
+  }
+
   return (
     <div className="driver-card">
       {/* Avatar */}
@@ -23,7 +41,7 @@ function DriverInfoCard({ name, rating, distance, eta }) {
       </div>
 
       {/* Book Button */}
-      <button className="driver-book-btn">Book</button>
+      <button className="driver-book-btn" onClick={handleBook}>Book</button>
     </div>
   );
 }
