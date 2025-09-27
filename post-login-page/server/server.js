@@ -209,7 +209,7 @@ io.on('connection', (socket) => {
 
     socket.on('driver_message', (data) => {
         console.log("Driver messaged!");
-        socket.to(data.roomName).emit('driver_message', `This is just a driver's message`);
+        socket.to(data.roomName).emit('driver-message', `This is just a driver's message`);
 
     })
 
