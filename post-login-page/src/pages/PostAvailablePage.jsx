@@ -48,7 +48,8 @@ function PostAvailablePage() {
                             location: driverData?.location || 'Unknown',
                             destination: driverData?.destination || 'Unknown',
                             timestamp: new Date().toISOString(),
-                            status: 'available'
+                            status: 'available',
+                            roomName: driverId
                         };
                         
                         socket.emit('driver_message', message);
